@@ -8,8 +8,8 @@ import Header from "@cloudscape-design/components/header"
 import { Button } from '@cloudscape-design/components';
 import {SpaceBetween} from '@cloudscape-design/components';
 import ScheduleEvent from './ScheduleEvent';
-import Person from "../classes/Person";
-import Event from '../classes/Event';
+import Person from "../models/Person";
+import Event from '../models/Event';
 
 export default function Events() {
   let todaysDate = new Date().toISOString().split("T")[0];

@@ -5,7 +5,7 @@ import "../App.css";
 import '@cloudscape-design/global-styles/index.css';
 import { Button } from '@cloudscape-design/components';
 import {SpaceBetween} from '@cloudscape-design/components';
-import Person from '../classes/Person';
+import Person from '../models/Person';
 import AddPerson from './AddPerson';
 
 export default function People() {

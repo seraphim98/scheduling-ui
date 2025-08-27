@@ -9,7 +9,7 @@ import Button from "@cloudscape-design/components/button";
 import Container from "@cloudscape-design/components/container";
 import '@cloudscape-design/global-styles/index.css';
 import "../App.css";
-import Person from "../classes/Person";
+import Person from "../models/Person";
 import { MultiselectProps } from "@cloudscape-design/components/multiselect";
 
 
@@ -34,7 +34,7 @@ export default () => {
       setPeople(response.data);
     } catch (error) {
       console.error("Unable to get data")
-    }
+    }   
   }
   useEffect(() => {
     getData()
