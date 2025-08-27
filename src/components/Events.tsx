@@ -85,7 +85,7 @@ export default function Events() {
             `${selectedItems.length} ${
               selectedItems.length === 1 ? "item" : "items"
             } selected`,
-          itemSelectionLabel: ({ selectedItems }, item : Event) =>
+          itemSelectionLabel: ({ }, item : Event) =>
             item.name
         }}
         columnDefinitions={[

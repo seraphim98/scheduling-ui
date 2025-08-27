@@ -66,7 +66,7 @@ export default function People() {
             `${selectedItems.length} ${
               selectedItems.length === 1 ? "item" : "items"
             } selected`,
-          itemSelectionLabel: ({ selectedItems }, item : Person) =>
+          itemSelectionLabel: ({ }, item : Person) =>
             item.id
         }}
         columnDefinitions={[

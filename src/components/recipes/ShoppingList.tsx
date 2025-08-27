@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import Recipe from "../../models/Recipe";
-import { Header, Modal,Table } from "@cloudscape-design/components";
+import { Modal, Table } from "@cloudscape-design/components";
 import ShoppingListProps from "../../props/ShoppingListProps";
 
 export default function ShoppingList(props: ShoppingListProps) {

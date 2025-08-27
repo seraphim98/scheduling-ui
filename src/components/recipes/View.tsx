@@ -1,4 +1,4 @@
-import { Button, Table, TableProps, Header, SpaceBetween } from "@cloudscape-design/components";
+import { Button, Table, Header, SpaceBetween } from "@cloudscape-design/components";
 import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 import {RecipeData} from "../../models/Recipe";
@@ -54,7 +54,7 @@ export default function ViewRecipes() {
                 `${selectedItems.length} ${
                 selectedItems.length === 1 ? "item" : "items"
                 } selected`,
-            itemSelectionLabel: ({ selectedItems }, item) =>
+            itemSelectionLabel: ({ }, item) =>
                 item.id
             }}
             columnDefinitions={[

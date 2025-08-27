@@ -141,7 +141,7 @@ export default function UpsertRecipe(props: UpsertRecipeProps) {
                             `${selectedItems.length} ${
                             selectedItems.length === 1 ? "item" : "items"
                             } selected`,
-                        itemSelectionLabel: ({ selectedItems }, item) =>
+                        itemSelectionLabel: ({ }, item) =>
                             item.name
                     }}
                     columnDefinitions={[
