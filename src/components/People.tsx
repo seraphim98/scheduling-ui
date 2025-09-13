@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import axios from "axios";
 import Table from "@cloudscape-design/components/table"
 import "../App.css";
 import '@cloudscape-design/global-styles/index.css';
@@ -7,41 +6,36 @@ import { Button } from '@cloudscape-design/components';
 import {SpaceBetween} from '@cloudscape-design/components';
 import Person from '../models/Person';
 import AddPerson from './AddPerson';
+import SchedulerClient from '../Clients/SchedulerClient';
 
-export default function People() {
-  const [people, setPeople] = useState([]);
-  const [open, setOpen] = useState<boolean>(false);
+interface PeopleProps {
+  client: SchedulerClient;
+}
+export default function People(props: PeopleProps) {
+  const [people, setPeople] = useState<Array<Person>>([]);
+  const [addPersonFormVisible, setAddPersonFormVisible] = useState<boolean>(false);
   const [selectedItems, setSelectedItems] = useState<Array<Person>>([]);
+  const chunkSize = 10;
+  const getData = async () => {
+    const response = await props.client.getRecords("People");
+    setPeople(response);
+  };
 
-  const getData = () => {
-    axios.get("https://localhost:7071/api/People")
-        .then(response => {
-  
-          setPeople(response.data);
-        })
-        .catch(error => {
-          console.error(error);
-        });
+  const deleteSelectedItems = async () => {
+    for (let i = 0; i < selectedItems.length; i += chunkSize) {
+      const chunk = selectedItems.slice(i, i + chunkSize);
+      await Promise.all(chunk.map(x => props.client.deleteRecord(x.id, "People")));
+      
+      const ids = chunk.map(x => x.id);
+      const remainingPeople = people.filter(x => !ids.includes(x.id));
+      setPeople(remainingPeople);
+    }
+    setSelectedItems([]);
   }
-  const deleteSelectedItems = () => {
-    selectedItems.forEach(x => {
-      axios.delete(`https://localhost:7071/api/People/${x.id}`);
-    })
-    alert("Sucessful deleted person(s).");
-    window.location.reload();
-  }
-  const refreshPage = () => {
-    window.location.reload();
-  }
+
   useEffect(() => {
     getData()
   }, []);
-  const openForm = () => {
-    setOpen(true)
-  }
-  if (open) {
-    return (<AddPerson/>)
-  }
 
   return (
     <>
@@ -49,11 +43,11 @@ export default function People() {
         items={people}
         resizableColumns
         header={
-          <SpaceBetween direction='horizontal' size='s'>
-              <Button onClick={refreshPage} >Refresh</Button>
-              <Button onClick={openForm}>Add person</Button>
-              <Button onClick={deleteSelectedItems} >Delete</Button>
-              </SpaceBetween>
+          <SpaceBetween direction='horizontal' size='s' alignItems='end'>
+              <Button iconName={'refresh'} onClick={getData}> Refresh </Button>
+              <Button onClick={() => setAddPersonFormVisible(true)}> Add user </Button>
+              <Button onClick={deleteSelectedItems}> Delete </Button>
+          </SpaceBetween>
         }
         onSelectionChange={({ detail }) =>
           setSelectedItems(detail.selectedItems)
@@ -86,6 +80,7 @@ export default function People() {
         { id: "first", visible: true }]}
         >
         </Table>
+        <AddPerson people={people} setPeople={setPeople} visible={addPersonFormVisible} setVisible={setAddPersonFormVisible} client={props.client}/>
     </>
   )
 }

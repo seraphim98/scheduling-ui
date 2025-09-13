@@ -1,34 +1,58 @@
 import { useState } from 'react';
 import axios from "axios";
 import Input from "@cloudscape-design/components/input";
-import { FormField, SpaceBetween } from "@cloudscape-design/components";
-import Button from "@cloudscape-design/components/button";
-import Container from "@cloudscape-design/components/container";
+import { Button, Header, Modal, FormField, SpaceBetween } from "@cloudscape-design/components";
 import '@cloudscape-design/global-styles/index.css';
 import "../App.css";
+import Person from '../models/Person';
+import SchedulerClient from '../Clients/SchedulerClient';
+import UpsertRequest from '../models/PostRequest';
+import { on } from 'events';
 
-export default () => {
+interface AddPersonProps {
+  setPeople: React.Dispatch<React.SetStateAction<Array<Person>>>;
+  people: Array<Person>;
+  visible: boolean;
+  setVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  client: SchedulerClient;
+}
+
+export default (props: AddPersonProps) => {
+  
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  function addPerson() {
-    if (validInput()) {
-      axios.post("https://localhost:7071/api/People", {
+
+  const onClose = () => {
+    props.setVisible(false);
+    setFirstName("");
+    setLastName("");
+  }
+
+  const addPerson = async () => {
+    const newPerson : UpsertRequest = {
+      id: "",
+      data: JSON.stringify({
         firstName: firstName,
-        lastName: lastName,
-      }).then(() => {
-        alert("Succesfully added event");
-        window.location.reload();
-      }).catch(error => {
-        console.error(error);
-      });;
-    }
+        lastName: lastName
+      })
+    };
+
+    const response = await props.client.createRecord(newPerson, "People");
+    props.people.push(response);
+    props.setPeople([...props.people]);
+    onClose();
+    
+    return;
   }
   return (
-    <Container header={
-      <h1>Please enter the required details</h1>
-    }>
+    <Modal 
+      visible={props.visible} 
+      onDismiss={onClose} 
+      closeAriaLabel="Close modal"
+      footer={<SpaceBetween size='s' alignItems='end'><Button disabled={!validInput(firstName, lastName)} onClick={addPerson}> Submit</Button></SpaceBetween>}
+      header={<Header variant="h2">Please enter user details</Header>}>
     <FormField stretch>
-      
+    <SpaceBetween direction='vertical' size='m'>
     <Input
       onChange={({ detail }) => setFirstName(detail.value)}
       value={firstName}
@@ -39,18 +63,14 @@ export default () => {
       value={lastName}
       placeholder="Enter the persons last name"
     />
+    </SpaceBetween>
     </FormField>
     
     <FormField stretch>
     </FormField>
-    <FormField stretch>
-      <SpaceBetween direction="horizontal" size="xxl">
-      <Button onClick={addPerson}>Submit</Button>
-    </SpaceBetween>
-    </FormField>
-    </Container>
+    </Modal>
   )};
 
-  function validInput() {
-    return true;
+  function validInput(firstName: string, lastName: string) {
+    return firstName.length > 0 && lastName.length > 0;
   }
