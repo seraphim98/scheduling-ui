@@ -1,70 +1,87 @@
-import * as React from "react";
 import { useState, useEffect } from 'react';
-import axios from "axios";
-import Input from "@cloudscape-design/components/input";
-import DatePicker from "@cloudscape-design/components/date-picker";
-import { Form, FormField, SpaceBetween } from "@cloudscape-design/components";
+import { Button, DatePicker, FormField, Header, Input, Modal, SpaceBetween } from "@cloudscape-design/components";
 import Multiselect from "@cloudscape-design/components/multiselect";
-import Button from "@cloudscape-design/components/button";
-import Container from "@cloudscape-design/components/container";
 import '@cloudscape-design/global-styles/index.css';
 import "../App.css";
 import Person from "../models/Person";
 import { MultiselectProps } from "@cloudscape-design/components/multiselect";
+import { ScheduleEventProps } from '../props/ScheduleEventProps';
+import UpsertRequest from '../models/UpsertRequest';
 
 
-export default () => {
+export default function Events(props: ScheduleEventProps) {
   const [
     selectedOptions,
     setSelectedOptions
   ] = useState<ReadonlyArray<MultiselectProps.Option>>([]);
   const [name, setName] = useState("");
-  const [start, setStart] = useState("");
-  const [finish, setFinish] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [people, setPeople] = useState([]);
-  const options = people.map((x: Person) => {
-    return {
-      label: x.firstName + " " + x.lastName,
-      value: x.id
-    }
-  });
+  const [options, setOptions] = useState<ReadonlyArray<MultiselectProps.Option>>([]);
+
+  const closeModal = () => {
+    props.setVisible(false);
+    setName("");
+    setPeople([]);
+    setStartTime("");
+    setEndTime("");
+    setSelectedOptions([]);
+    return;
+  }
+
   async function getData() {
     try {
-      let response = await axios.get("https://localhost:7071/api/People");
-      setPeople(response.data);
+      const response = await props.client.list("People");
+      console.log(response);
+      setPeople(response);
     } catch (error) {
-      console.error("Unable to get data")
+      console.error("Unable to get data");
+      console.log(error)
     }   
   }
+
   useEffect(() => {
     getData()
   }, []);
-  const addEvent = async () =>  {
+
+  useEffect(() => {
+    const newOptions = people?.map((x: Person) => ({
+      label: x.firstName + " " + x.lastName,
+      value: x.id
+    }));
+    setOptions(newOptions ?? []);
+  }, [people]);
+
+
+  async function addEvent() {
     try {
-      let data = {
+      const data = {
         name: name,
-        startTime: new Date(start).toISOString(),
-        endTime: new Date(finish).toISOString()
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date(endTime).toISOString()
       }
-      if (data.startTime > data.endTime || !name || selectedOptions.length === 0) {
-        alert("Invalid input");
-        return;
-      }
-      let response = await axios.post("https://localhost:7071/api/Events", data);
-      let event = response.data;
-      
-      event.people.push(...selectedOptions.map(x => x.value));
-      await axios.put(`https://localhost:7071/api/Events/${event.id}`, event);
-      alert("Sucessful updated event(s).");
-      window.location.reload();
+      const upsertRequest = new UpsertRequest(JSON.stringify(data));
+      const response = await props.client.create(upsertRequest, "Events");
+      response.people.push(...selectedOptions.map(x => x.value));
+      await props.client.update(new UpsertRequest(JSON.stringify(response), response.id), "Events");
+
+      props.events.push(response);
+      props.setEvents([...props.events]);
+      closeModal();
     } catch (error) {
-      alert("Error updating database");
+      console.log(error);
     }
   }
   return (
-    <Container header={
-      <h1>Please enter your new event</h1>
-    }>
+    <Modal
+      visible={props.visible}
+      onDismiss={closeModal}
+      closeAriaLabel="Close modal"
+      footer={<SpaceBetween size='s' alignItems='end'><Button disabled={!validInput(startTime, endTime, name, selectedOptions)} onClick={addEvent}> Submit</Button></SpaceBetween>}
+      header={<Header variant="h2">Please enter your event details</Header>}
+    >
+  
     <FormField stretch>
       
     <Input
@@ -87,9 +104,9 @@ export default () => {
     <FormField stretch>
       <SpaceBetween direction="horizontal" size="xxl">
     <DatePicker
-        onChange={({ detail }) => setStart(detail.value)}
+        onChange={({ detail }) => setStartTime(detail.value)}
         expandToViewport
-        value={start}
+        value={startTime}
         openCalendarAriaLabel={selectedDate =>
           "Choose certificate expiry date" +
           (selectedDate
@@ -100,9 +117,9 @@ export default () => {
       />
       
     <DatePicker
-        onChange={({ detail }) => setFinish(detail.value)}
+        onChange={({ detail }) => setEndTime(detail.value)}
         expandToViewport
-        value={finish}
+        value={endTime}
         openCalendarAriaLabel={selectedDate =>
           "Choose certificate expiry date" +
           (selectedDate
@@ -112,13 +129,18 @@ export default () => {
         placeholder="YYYY/MM/DD - End Date"
       />
       <div className="testing">
-      <Button onClick={addEvent}>Submit</Button>
       </div>
     </SpaceBetween>
     </FormField>
-    </Container>
-  )};
+    </Modal>
+  )}
 
-  function validInput() {
+  function validInput(startTime: string, endTime: string, name: string, selectedOptions: ReadonlyArray<MultiselectProps.Option>) {
+    if (!startTime || !endTime) {
+      return false;
+    }
     
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    return (end > start && name && selectedOptions.length !== 0)
   }

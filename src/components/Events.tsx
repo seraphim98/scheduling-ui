@@ -1,82 +1,74 @@
 import { useState, useEffect } from 'react';
-import axios from "axios";
 import Table from "@cloudscape-design/components/table"
 import Calendar from "@cloudscape-design/components/calendar";
 import "../App.css";
 import '@cloudscape-design/global-styles/index.css';
-import Header from "@cloudscape-design/components/header"
-import { Button } from '@cloudscape-design/components';
-import {SpaceBetween} from '@cloudscape-design/components';
+import { Button, Header, SpaceBetween } from '@cloudscape-design/components';
+import {} from '@cloudscape-design/components';
 import ScheduleEvent from './ScheduleEvent';
 import Person from "../models/Person";
 import Event from '../models/Event';
+import { BaseProps } from '../props/BaseProps';
 
-export default function Events() {
-  let todaysDate = new Date().toISOString().split("T")[0];
-  const [people, setPeople] = useState([]);
+
+export default function Events(props: BaseProps) {
+  const todaysDate = new Date().toISOString().split("T")[0];
+  const [events, setEvents] = useState<Array<Event>>([]);
   const [value, setValue] = useState("");
   const [selectedItems, setSelectedItems] = useState<Array<Event>>([]);
-  const [open, setOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean>(false);
 
   const date = value === "" ? todaysDate: value;
   const reversed = reverseDate(date);
 
-  const deleteSelectedItems = () => {
-    selectedItems.forEach(x => {
-      axios.delete(`https://localhost:7071/api/Events/${x.id}`);
-    })
-    alert("Sucessful deleted event(s).");
-    window.location.reload();
+  async function deleteEvents() {
+    const eventIds = selectedItems?.map(x => x.id);
+    await Promise.all(selectedItems.map(x => props.client.delete(x.id, "Events")));
+
+    const remainingEvents = events.filter(x => !eventIds.includes(x.id));
+    setEvents(remainingEvents);
+    setSelectedItems([]);
   }
 
-  const openForm = () => {
-    setOpen(true)
-  }
-
-  const getData = () => {
-    axios.get("https://localhost:7071/api/Events")
-        .then(response => {
-  
-          setPeople(response.data);
-        })
-        .catch(error => {
-          console.error(error);
-        });
-  }
-
-  const refreshPage = () => {
-    window.location.reload();
+  async function getData() {
+    setLoading(true);
+    try {
+      const response = await props.client.list("Events");
+      setEvents(response ?? []);
+    } catch (error) {
+      console.error("Unable to get data")
+    }
+    setLoading(false);
   }
 
   useEffect(() => {
     getData()
   }, []);
-  
-  if (open) {
-    return (<ScheduleEvent/>)
-  }
+
   return (
     <>
       <div className='center'>
       <Calendar
-      onChange={({ detail }) => setValue(detail.value)}
-      value={value}>
+        onChange={({ detail }) => setValue(detail.value)}
+        value={value}>
       </Calendar>
       </div>
         <Table
-        items={people.filter(x => isActiveOnDate(x, date))}
+        items={events.filter(x => isActiveOnDate(x, date))}
         resizableColumns
         header={
           <SpaceBetween direction='horizontal' size='s'>
-              <Header variant="h1">Selected Date: {reversed}</Header>
-              <Button onClick={refreshPage} >Refresh</Button>
-              <Button onClick={openForm}>Add new event</Button>
-              <Button onClick={deleteSelectedItems} >Delete</Button>
+              <Header variant="h1"> Selected Date: {reversed} </Header>
+              <Button iconName="refresh" iconAlt="refresh" onClick={getData}/>
+              <Button onClick={() => setOpen(true)}> Add new event </Button>
+              <Button disabled={selectedItems.length === 0} onClick={deleteEvents} >Delete</Button>
           </SpaceBetween>
         }
         onSelectionChange={({ detail }) =>
           setSelectedItems(detail.selectedItems)
         }
+        loading={loading}
         selectedItems={selectedItems}
         selectionType="multi"
         ariaLabels={{
@@ -95,35 +87,39 @@ export default function Events() {
             cell: (item : Event) => item.name,
             isRowHeader: true
           },
-          {id: "first",
-          header: "Start Date",
-          cell: (item : Event) => reverseDate(item.startTime.split("T")[0]),
-          sortingField: "alt"
-        },{id: "last",
-          header: "End Date",
-          cell: (item : Event) => reverseDate(item.endTime.split("T")[0]),
-          sortingField: "alt"
-        },{
-          id:"attendance",
-          header: "People attending",
-          cell: (item : Event) => item.people.map((x: Person) => {
-            return x.firstName + " " + x.lastName;
-          }).join(", ")
-        }
+          {
+            id: "first",
+            header: "Start Date",
+            cell: (item : Event) => reverseDate(item.startTime.split("T")[0]),
+            sortingField: "alt"
+          },
+          {
+            id: "last",
+            header: "End Date",
+            cell: (item : Event) => reverseDate(item.endTime.split("T")[0]),
+            sortingField: "alt"
+          },
+          {
+            id:"attendance",
+            header: "People attending",
+            cell: (item : Event) => item.people?.map((x: Person) => {
+              return x.firstName + " " + x.lastName;
+            }).join(", ")
+          }
         ]}
         columnDisplay={[
           {id: "variable", visible: true},
-        { id: "first", visible: true },
-        { id: "last", visible: true },
-        { id: "attendance", visible: true },
-      ]} 
-        >
+          { id: "first", visible: true },
+          { id: "last", visible: true },
+          { id: "attendance", visible: true },
+        ]}>
         </Table>
+        <ScheduleEvent client={props.client} visible={open} setVisible={setOpen} events={events} setEvents={setEvents}/>
     </>
   )
 }
 function isActiveOnDate(event: Event, date: string) {
-  if(!date) {
+  if (!date) {
     return false;
   }
   return date >= event.startTime.split("T")[0] && date <= event.endTime.split("T")[0];
