@@ -5,7 +5,7 @@ import "./styling/top-nav.css";
 export default function () {
   return (
       <BrowserRouter>
-          <Scheduler />
+          <Scheduler/>
       </BrowserRouter>
   );
 }

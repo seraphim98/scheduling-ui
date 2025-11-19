@@ -1,6 +1,6 @@
 import isDev from "../helpers/EnvironmentHelper";
 import axios, { AxiosResponse, isAxiosError } from "axios";
-import UpsertRequest from "../models/PostRequest";
+import UpsertRequest from "../models/UpsertRequest";
 import ApiHandlerOptions from "../props/SchedulerClientOptions";
 
 export default class SchedulerClient {
@@ -21,11 +21,12 @@ export default class SchedulerClient {
     private authToken: string;
     private headers?: { [key: string]: string };
 
-    async sendRequest(request: Promise<AxiosResponse<any>>,) { 
+    async send(request: Promise<AxiosResponse<any>>,) { 
         try {
             const response = await request;
             return response.data;
         } catch (error) {
+            console.log(error);
             if (isAxiosError(error)) {
                 console.error(`API request failed with response code: ${error.code} `);
                 throw error.message;
@@ -34,27 +35,33 @@ export default class SchedulerClient {
         }
     }
 
-    async createRecord(upsertRequest: UpsertRequest, entity: string) {
+    async create(upsertRequest: UpsertRequest, entity: string) {
         const url = `${this.baseUrl}/${entity}`;
-        console.log(upsertRequest.data)
-        const response = await this.sendRequest(axios.post(url, JSON.parse(upsertRequest.data), this.headers)); //Should it be entity specific???
+        console.log(JSON.parse(upsertRequest.data));
+        const response = await this.send(axios.post(url, JSON.parse(upsertRequest.data), this.headers));
         return response;    
     }
 
-    async updateRecord(upsertRequest: UpsertRequest, entity: string) {
+    async update(upsertRequest: UpsertRequest, entity: string) {
         const url = `${this.baseUrl}/${entity}/${upsertRequest.id}`;
-        const response = await this.sendRequest(axios.put(url, JSON.parse(upsertRequest.data), this.headers));
+        const response = await this.send(axios.put(url, JSON.parse(upsertRequest.data), this.headers));
         return response;
     }
 
-    async deleteRecord(id: string, entity: string) {
+    async delete(id: string, entity: string) {
         const url = `${this.baseUrl}/${entity}/${id}`;
-        await this.sendRequest(axios.delete(url, this.headers));
+        await this.send(axios.delete(url, this.headers));
     }
 
-    async getRecords(entity: string) {
+    async list(entity: string) {
         const url = `${this.baseUrl}/${entity}`;
-        const response = await this.sendRequest(axios.get(url, this.headers));
+        const response = await this.send(axios.get(url, this.headers));
+        return response;
+    }
+
+    async get(id: string, entity: string) {
+        const url = `${this.baseUrl}/${entity}/${id}`;
+        const response = await this.send(axios.get(url, this.headers));
         return response;
     }
 }

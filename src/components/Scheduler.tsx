@@ -34,12 +34,12 @@ export default function Scheduler () {
             <SideNavigation
               header={{
                 href: '/',
-                text: 'Scheduler',
+                text: 'Home',
               }}
               items={[
                 { type: 'link', text: `Events`, href: `/events` },
                 { type: 'link', text: 'People', href: '/people'},
-                { type: 'link', text: 'Recipes', href: '/recipes'}
+                { type: 'link', text: 'Recipes', href: '/recipes'},
               ]}
               onFollow={ event => {
                 event.preventDefault();
@@ -52,7 +52,7 @@ export default function Scheduler () {
           content={
             <Routes>
               <Route path= "/" element={<h1>Welcome to my demo site!</h1>}/>
-              <Route path= "/events" element={<Events/>}/>
+              <Route path= "/events" element={<Events client={client}/>}/>
               <Route path= "/people" element={<People client={client}/>}/>
               <Route path= "/recipes" element={<ViewRecipes/>}/>
             </Routes>

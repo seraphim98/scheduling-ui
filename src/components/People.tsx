@@ -1,30 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Table from "@cloudscape-design/components/table"
 import "../App.css";
 import '@cloudscape-design/global-styles/index.css';
-import { Button } from '@cloudscape-design/components';
-import {SpaceBetween} from '@cloudscape-design/components';
+import { Button, SpaceBetween } from '@cloudscape-design/components';
 import Person from '../models/Person';
 import AddPerson from './AddPerson';
-import SchedulerClient from '../Clients/SchedulerClient';
+import { BaseProps } from '../props/BaseProps';
 
-interface PeopleProps {
-  client: SchedulerClient;
-}
-export default function People(props: PeopleProps) {
+export default function People(props: BaseProps) {
   const [people, setPeople] = useState<Array<Person>>([]);
   const [addPersonFormVisible, setAddPersonFormVisible] = useState<boolean>(false);
   const [selectedItems, setSelectedItems] = useState<Array<Person>>([]);
   const chunkSize = 10;
-  const getData = async () => {
-    const response = await props.client.getRecords("People");
+
+  const getData = useCallback(async () => {
+    const response = await props.client.list("People");
     setPeople(response);
-  };
+  }, [props.client]);
 
   const deleteSelectedItems = async () => {
     for (let i = 0; i < selectedItems.length; i += chunkSize) {
       const chunk = selectedItems.slice(i, i + chunkSize);
-      await Promise.all(chunk.map(x => props.client.deleteRecord(x.id, "People")));
+      await Promise.all(chunk.map(x => props.client.delete(x.id, "People")));
       
       const ids = chunk.map(x => x.id);
       const remainingPeople = people.filter(x => !ids.includes(x.id));
@@ -35,7 +32,7 @@ export default function People(props: PeopleProps) {
 
   useEffect(() => {
     getData()
-  }, []);
+  }, [getData]);
 
   return (
     <>

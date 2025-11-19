@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import axios from "axios";
 import Input from "@cloudscape-design/components/input";
 import { Button, Header, Modal, FormField, SpaceBetween } from "@cloudscape-design/components";
 import '@cloudscape-design/global-styles/index.css';
 import "../App.css";
 import Person from '../models/Person';
 import SchedulerClient from '../Clients/SchedulerClient';
-import UpsertRequest from '../models/PostRequest';
-import { on } from 'events';
+import UpsertRequest from '../models/UpsertRequest';
 
 interface AddPersonProps {
   setPeople: React.Dispatch<React.SetStateAction<Array<Person>>>;
@@ -28,16 +26,15 @@ export default (props: AddPersonProps) => {
     setLastName("");
   }
 
-  const addPerson = async () => {
-    const newPerson : UpsertRequest = {
-      id: "",
-      data: JSON.stringify({
+  async function addPerson() {
+    const data = {
         firstName: firstName,
         lastName: lastName
-      })
     };
 
-    const response = await props.client.createRecord(newPerson, "People");
+    const newPerson = new UpsertRequest(JSON.stringify(data));
+
+    const response = await props.client.create(newPerson, "People");
     props.people.push(response);
     props.setPeople([...props.people]);
     onClose();
